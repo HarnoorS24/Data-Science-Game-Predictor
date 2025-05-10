@@ -35,7 +35,7 @@ start_index = 0
 if os.path.exists(checkpoint_path):
     with open(checkpoint_path, "r") as f:
         start_index = int(f.read().strip())
-    print(f"🔁 Resuming from index {start_index}")
+    print(f" Resuming from index {start_index}")
 
 # === CSV HEADER SETUP ===
 if not os.path.exists(output_csv):
@@ -58,8 +58,8 @@ driver = start_driver()
 for idx in range(start_index, len(df)):
     title = df.loc[idx, 'Title']
     base_url = df.loc[idx, 'Game URL'].rstrip('/') + "/user-reviews"
-    print(f"\n🔍 Scraping: {idx}. {title}")
-    print(f"🌐 Base URL: {base_url}")
+    print(f"\n Scraping: {idx}. {title}")
+    print(f" Base URL: {base_url}")
 
     game_start = time.time()
 
@@ -67,7 +67,7 @@ for idx in range(start_index, len(df)):
         try:
             driver.get(base_url)
         except InvalidSessionIdException:
-            print("⚠️ Detected invalid session — restarting ChromeDriver...")
+            print(" Detected invalid session — restarting ChromeDriver...")
             try:
                 driver.quit()
             except:
@@ -83,9 +83,9 @@ for idx in range(start_index, len(df)):
                 EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Accept')]"))
             )
             cookie_btn.click()
-            print("✅ Dismissed cookie banner.")
+            print(" Dismissed cookie banner.")
         except:
-            print("⚠️ No cookie banner to dismiss.")
+            print(" No cookie banner to dismiss.")
 
         # === PLATFORM DETECTION ===
         platforms = []
@@ -99,21 +99,21 @@ for idx in range(start_index, len(df)):
                     if "ios" in slug:
                         slug = "ios-iphoneipad"
                     platforms.append((clean_name, slug))
-            print(f"🔎 Platforms extracted (fallback only): {platforms}")
+            print(f" Platforms extracted (fallback only): {platforms}")
         except Exception:
-            print("⚠️ Could not extract platform from dropdown. Defaulting to unknown.")
+            print(" Could not extract platform from dropdown. Defaulting to unknown.")
             platforms = [("unknown", "")]
 
         for platform_name, platform_slug in platforms:
             try:
                 review_url = f"{base_url}/?platform={platform_slug}&filter=Positive%20Reviews"
-                print(f"🕹️ Platform: {platform_name}")
-                print(f"🔗 Scraping URL: {review_url}")
+                print(f" Platform: {platform_name}")
+                print(f" Scraping URL: {review_url}")
 
                 try:
                     driver.get(review_url)
                 except InvalidSessionIdException:
-                    print("⚠️ Detected invalid session during platform scrape — restarting ChromeDriver...")
+                    print("️ Detected invalid session during platform scrape — restarting ChromeDriver...")
                     try:
                         driver.quit()
                     except:
@@ -130,7 +130,7 @@ for idx in range(start_index, len(df)):
                 try:
                     no_reviews = driver.find_elements(By.CSS_SELECTOR, ".c-pageProductReviews_message.u-text-center")
                     if no_reviews:
-                        print("❌ No user reviews found (empty review message on page). Skipping.")
+                        print(" No user reviews found (empty review message on page). Skipping.")
                         continue
                 except:
                     pass
@@ -185,17 +185,17 @@ for idx in range(start_index, len(df)):
                                                 break
                                         else:
                                             text = placeholder_text  # fallback
-                                            print("⚠️ Modal opened, but content is still a placeholder.")
+                                            print(" Modal opened, but content is still a placeholder.")
 
                                         if text and "[spoiler alert" not in text.lower():
-                                            print(f"📝 Replaced with full modal review: {text[:80]}...")
+                                            print(f" Replaced with full modal review: {text[:80]}...")
 
                                         try:
                                             close_svg = WebDriverWait(driver, 3).until(
                                                 EC.element_to_be_clickable((By.CSS_SELECTOR, "svg.c-globalModal_closeButton"))
                                             )
                                             driver.execute_script("arguments[0].click();", close_svg)
-                                            print("❎ Closed modal (SVG button).")
+                                            print(" Closed modal (SVG button).")
                                         except:
                                             try:
                                                 close_svg = WebDriverWait(driver, 3).until(
@@ -205,34 +205,34 @@ for idx in range(start_index, len(df)):
                                                     "arguments[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));",
                                                     close_svg
                                                 )
-                                                print("❎ Closed modal (SVG click event fallback).")
+                                                print(" Closed modal (SVG click event fallback).")
                                             except:
-                                                print("⚠️ Failed to close modal (SVG fallback also failed).")
+                                                print(" Failed to close modal (SVG fallback also failed).")
                                 except:
-                                    print("⚠️ Could not expand spoiler modal.")
+                                    print(" Could not expand spoiler modal.")
 
                             if text:
                                 reviews.append(text)
                                 scores.append(score_val)
                             else:
-                                print("⚠️ Skipped review with no text.")
+                                print(" Skipped review with no text.")
 
                             if len(reviews) >= MAX_REVIEWS_PER_PLATFORM:
                                 break
 
                         except Exception:
-                            print("⚠️ Error while parsing review.")
+                            print(" Error while parsing review.")
                             traceback.print_exc()
 
                 except Exception as e:
-                    print("⚠️ Error during scroll or parsing.")
+                    print("️ Error during scroll or parsing.")
                     traceback.print_exc()
 
                 if not reviews:
-                    print(f"❌ No reviews found for {platform_name}")
+                    print(f" No reviews found for {platform_name}")
                     continue
 
-                print(f"✅ Scraped {len(reviews)} reviews from {platform_name}")
+                print(f" Scraped {len(reviews)} reviews from {platform_name}")
 
                 with open(output_csv, "a", newline="", encoding="utf-8") as f:
                     writer = csv.writer(f)
@@ -240,21 +240,21 @@ for idx in range(start_index, len(df)):
                         writer.writerow([title, text, score, "User", "1", platform_name, review_url])
 
             except Exception:
-                print(f"⚠️ Failed scraping platform: {platform_name}")
+                print(f" Failed scraping platform: {platform_name}")
                 traceback.print_exc()
 
     except Exception:
-        print("❌ Failed to scrape this game.")
+        print(" Failed to scrape this game.")
         traceback.print_exc()
 
     with open(checkpoint_path, "w") as f:
         f.write(str(idx + 1))
 
     game_time = time.time() - game_start
-    print(f"⏱️ Time taken: {game_time:.2f}s")
+    print(f"️ Time taken: {game_time:.2f}s")
 
 # === CLEANUP ===
 driver.quit()
-print("✅ Done.")
+print(" Done.")
 # vdisplay.stop()
 
